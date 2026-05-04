@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Longest Increasing Path in a Matrix</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <header>
+    <span class="num">#329</span>
+    <h1>Longest Increasing Path in a Matrix</h1>
+    <span class="tag">HARD</span>
+  </header>
+
+  <!-- ── Controls Row 1: Preset / Custom ────────────── -->
+  <div class="controls">
+    <label>Preset</label>
+    <select id="preset-sel">
+      <option value="0">Example 1 · [[9,9,4],[6,6,8],[2,1,1]] → 4</option>
+      <option value="1">Example 2 · [[3,4,5],[3,2,6],[2,2,1]] → 4</option>
+      <option value="2">Example 3 · [[1]] → 1</option>
+      <option value="3">Staircase 4×4</option>
+      <option value="4">Random 5×5</option>
+    </select>
+    <label>Custom</label>
+    <input type="text" id="custom-input" placeholder='e.g. [[1,2],[3,4]]'/>
+    <button id="load-btn">Load</button>
+  </div>
+
+  <!-- ── Controls Row 2: Playback ────────────────────── -->
+  <div class="controls">
+    <button class="primary" id="run-btn">▶ Run DFS</button>
+    <button id="step-btn">Step →</button>
+    <button id="reset-btn">Reset</button>
+    <div class="speed-row">
+      <label>Speed</label>
+      <input type="range" id="speed-slider" min="60" max="1200" value="450" step="30"/>
+      <span class="speed-lbl" id="speed-lbl">450ms</span>
+    </div>
+  </div>
+
+  <!-- ── Legend ──────────────────────────────────────── -->
+  <div class="legend">
+    <div class="leg"><div class="leg-dot current-dot"></div>Current cell</div>
+    <div class="leg"><div class="leg-dot neighbor-dot"></div>Checking neighbor</div>
+    <div class="leg"><div class="leg-dot memo-dot"></div>Memoized</div>
+    <div class="leg"><div class="leg-dot path-dot"></div>On longest path</div>
+    <div class="leg"><div class="leg-dot final-dot"></div>Final path</div>
+  </div>
+
+  <!-- ── Progress Bar ────────────────────────────────── -->
+  <div class="progress">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <!-- ── Matrix Grid + Side Panels ───────────────────── -->
+  <div class="grid-area">
+
+    <!-- Matrix grid (cells injected by JS) -->
+    <div id="matrix-grid"></div>
+
+    <!-- Side panels -->
+    <div class="side">
+
+      <!-- Memo cache -->
+      <div class="panel">
+        <h3>Memo cache · dp[row][col]</h3>
+        <table class="memo-table">
+          <tbody id="memo-tbody">
+            <tr><td colspan="2" class="empty-msg">Empty — run to fill</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- DFS call stack -->
+      <div class="panel">
+        <h3>DFS call stack</h3>
+        <ul class="stack-list" id="call-stack">
+          <li class="empty-msg">—</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Log Panel ────────────────────────────────────── -->
+  <div class="log-panel" id="log-panel">
+    Press <strong>▶ Run DFS</strong> to animate the full traversal,
+    or <strong>Step →</strong> to advance one event at a time.
+  </div>
+
+  <!-- ── Result Bar (hidden until done) ──────────────── -->
+  <div class="result-bar" id="result-bar">
+    <div class="metric">
+      <div class="lbl">LONGEST PATH LENGTH</div>
+      <div class="big" id="res-len">—</div>
+    </div>
+    <div class="metric">
+      <div class="lbl">PATH (values in order)</div>
+      <div class="seq" id="res-path">—</div>
+    </div>
+  </div>
+
+  <!-- ── Algorithm Info Cards ─────────────────────────── -->
+  <div class="algo-info">
+    <div class="algo-card">
+      <div class="ac-label">Algorithm</div>
+      <div class="ac-val">DFS + Memoization</div>
+      <div class="ac-desc">Top-down DP. Each cell's longest path is computed once and cached.</div>
+    </div>
+    <div class="algo-card">
+      <div class="ac-label">Time Complexity</div>
+      <div class="ac-val">O(m × n)</div>
+      <div class="ac-desc">Every cell is visited at most once due to memoization.</div>
+    </div>
+    <div class="algo-card">
+      <div class="ac-label">Space Complexity</div>
+      <div class="ac-val">O(m × n)</div>
+      <div class="ac-desc">Memo table + DFS call stack depth up to m×n.</div>
+    </div>
+    <div class="algo-card">
+      <div class="ac-label">Movement</div>
+      <div class="ac-val">4-directional</div>
+      <div class="ac-desc">Up, down, left, right only. No diagonals. No wrap-around.</div>
+    </div>
+  </div>
+
+</div><!-- /.page -->
+
+<script src="script.js"></script>
+</body>
+</html>

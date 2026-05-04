@@ -1,0 +1,566 @@
+/* ============================================================
+   style.css — Longest Increasing Path in a Matrix Simulation
+   ============================================================
+
+   Table of Contents
+   -----------------
+   1. CSS Variables (theme tokens)
+   2. Reset & Base
+   3. Layout
+   4. Header
+   5. Controls
+   6. Legend
+   7. Progress Bar
+   8. Matrix Grid & Cells
+   9. Cell State Classes
+   10. Side Panels (Memo Cache + Call Stack)
+   11. Log Panel
+   12. Result Bar
+   13. Algorithm Info Cards
+   14. Animations
+   15. Responsive
+   ============================================================ */
+
+
+/* ── 1. CSS Variables ──────────────────────────────────────── */
+:root {
+  /* backgrounds */
+  --bg:         #0f0f13;
+  --surface:    #18181f;
+  --surface2:   #22222c;
+  --border:     #2e2e3a;
+
+  /* text */
+  --text:       #e8e8f0;
+  --muted:      #7a7a9a;
+
+  /* accent colors */
+  --accent:     #7c6ff7;   /* purple  — current cell  */
+  --amber:      #f0a04b;   /* amber   — neighbor cell */
+  --green:      #4ecb8d;   /* green   — success / ok  */
+  --red:        #e05a5a;   /* red     — hard tag      */
+  --gold:       #f5c842;   /* gold    — final path    */
+
+  /* tinted backgrounds */
+  --purple-bg:  #1e1b33;
+  --amber-bg:   #2b2014;
+  --gold-bg:    #261f10;
+
+  /* fonts */
+  --font-ui:    'Syne', sans-serif;
+  --font-mono:  'JetBrains Mono', monospace;
+}
+
+
+/* ── 2. Reset & Base ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 20px 60px;
+  line-height: 1.5;
+}
+
+
+/* ── 3. Layout ─────────────────────────────────────────────── */
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+
+/* ── 4. Header ─────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+header .num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--purple-bg);
+  padding: 3px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+header .tag {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--red);
+  background: rgba(224, 90, 90, 0.12);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+
+/* ── 5. Controls ───────────────────────────────────────────── */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.controls label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+select,
+input[type="text"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+select:focus,
+input[type="text"]:focus {
+  border-color: var(--accent);
+}
+
+input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+button {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+button:hover {
+  background: var(--surface);
+  border-color: var(--muted);
+}
+
+button.primary {
+  background: var(--purple-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button.primary:hover {
+  background: #2b2550;
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Speed slider row */
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+input[type="range"] {
+  width: 110px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.speed-lbl {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  min-width: 46px;
+}
+
+
+/* ── 6. Legend ─────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.leg-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  border: 1.5px solid transparent;
+}
+
+/* Legend dot colors map to cell state classes */
+.current-dot  { background: var(--purple-bg); border-color: var(--accent); }
+.neighbor-dot { background: var(--amber-bg);  border-color: var(--amber); }
+.memo-dot     { background: var(--surface2);  border-color: var(--border); }
+.path-dot     { background: var(--gold-bg);   border-color: var(--amber); }
+.final-dot    { background: var(--gold);      border-color: #c99d2a; }
+
+
+/* ── 7. Progress Bar ───────────────────────────────────────── */
+.progress {
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 1px;
+  transition: width 0.25s ease;
+}
+
+
+/* ── 8. Matrix Grid & Cells ────────────────────────────────── */
+.grid-area {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+#matrix-grid {
+  display: inline-grid;
+  gap: 5px;
+  /* grid-template-columns is set dynamically by JS */
+}
+
+.cell {
+  width: 62px;
+  height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+
+  user-select: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+}
+
+/* Small coordinate label top-left */
+.cell .coord {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 9px;
+  color: var(--border);
+  font-family: var(--font-mono);
+}
+
+/* Memoized value badge bottom-right */
+.cell .memo-val {
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  transition: color 0.2s;
+}
+
+
+/* ── 9. Cell State Classes ─────────────────────────────────── */
+
+/* Currently executing DFS from this cell */
+.cell.current {
+  background: var(--purple-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.1);
+  z-index: 2;
+}
+
+/* Neighbor being evaluated */
+.cell.neighbor {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+  transform: scale(1.05);
+}
+
+/* Fully computed and cached */
+.cell.memo-done {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+/* Part of the traced longest path */
+.cell.path {
+  background: var(--gold-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* Starting cell of the final longest path */
+.cell.path-final {
+  background: var(--gold);
+  border-color: #c99d2a;
+  color: #1a1200;
+  transform: scale(1.08);
+}
+
+/* Pop animation triggered when a cell is memoized */
+.cell.pop {
+  animation: pop 0.25s ease;
+}
+
+
+/* ── 10. Side Panels ───────────────────────────────────────── */
+.side {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.panel h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* Memo table */
+.memo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.memo-table td {
+  padding: 4px 6px;
+  color: var(--text);
+}
+
+.memo-table tr:hover td {
+  background: var(--surface2);
+}
+
+.memo-table td:first-child {
+  color: var(--muted);
+}
+
+.memo-table td.val {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* Call stack list */
+.stack-list {
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.stack-list li {
+  padding: 3px 8px;
+  margin-bottom: 3px;
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--muted);
+  transition: background 0.15s;
+}
+
+/* Top of stack (active frame) */
+.stack-list li.active {
+  background: var(--purple-bg);
+  color: var(--accent);
+}
+
+/* Shared empty-state text */
+.empty-msg {
+  color: var(--border) !important;
+}
+
+
+/* ── 11. Log Panel ─────────────────────────────────────────── */
+.log-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 52px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+/* Inline emphasis helpers set via innerHTML in JS */
+.log-panel .em  { color: var(--text);   font-weight: 600; font-family: var(--font-mono); }
+.log-panel .ok  { color: var(--green);  font-weight: 600; }
+.log-panel .hi  { color: var(--accent); font-family: var(--font-mono); }
+.log-panel .amb { color: var(--amber);  font-family: var(--font-mono); }
+.log-panel .err { color: var(--red); }
+
+
+/* ── 12. Result Bar ────────────────────────────────────────── */
+.result-bar {
+  display: none; /* shown by JS when simulation ends */
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.result-bar .metric .lbl {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.result-bar .metric .big {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gold);
+  font-family: var(--font-mono);
+}
+
+.result-bar .metric .seq {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--green);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+
+/* ── 13. Algorithm Info Cards ──────────────────────────────── */
+.algo-info {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.algo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+
+.algo-card:hover {
+  border-color: var(--muted);
+}
+
+.algo-card .ac-label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.algo-card .ac-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.algo-card .ac-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+
+/* ── 14. Animations ────────────────────────────────────────── */
+
+/* Cell pop — triggered when a value is memoized */
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+
+/* ── 15. Responsive ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  header { flex-wrap: wrap; }
+  header .tag { margin-left: 0; }
+
+  .cell { width: 50px; height: 50px; font-size: 17px; }
+
+  .speed-row { margin-left: 0; width: 100%; }
+
+  .grid-area { flex-direction: column; }
+  .side { min-width: unset; width: 100%; }
+}
